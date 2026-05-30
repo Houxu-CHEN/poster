@@ -1,0 +1,383 @@
+\documentclass[12pt, a0paper]{article}
+
+% ===== 页面 =====
+\usepackage[
+    paperwidth=84.1cm,
+    paperheight=118.9cm,
+    margin=2cm,
+    columnsep=2cm
+]{geometry}
+
+% ===== 中文 =====
+\usepackage{ctex}
+
+% ===== 双栏 =====
+\usepackage{multicol}
+
+% ===== 表格 =====
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+% ===== 其他 =====
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ===== 颜色 =====
+\definecolor{myblue}{RGB}{25,55,109}
+\definecolor{myorange}{RGB}{200,100,20}
+\definecolor{mygreen}{RGB}{30,120,70}
+\definecolor{myred}{RGB}{180,40,40}
+\definecolor{mygray}{RGB}{130,130,130}
+\definecolor{mypurple}{RGB}{100,40,160}
+\definecolor{lightblue}{RGB}{235,245,255}
+
+% ===== 字体缩放 (A0) =====
+\renewcommand{\normalsize}{\fontsize{22}{30}\selectfont}
+\renewcommand{\large}{\fontsize{28}{36}\selectfont}
+\renewcommand{\Large}{\fontsize{34}{42}\selectfont}
+\renewcommand{\LARGE}{\fontsize{40}{48}\selectfont}
+\renewcommand{\huge}{\fontsize{48}{56}\selectfont}
+\renewcommand{\Huge}{\fontsize{56}{64}\selectfont}
+\renewcommand{\small}{\fontsize{18}{24}\selectfont}
+\renewcommand{\footnotesize}{\fontsize{15}{20}\selectfont}
+
+% ===== 收紧间距 =====
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+\setlength{\multicolsep}{0.5em}
+\raggedbottom
+
+% ===== 节标题 =====
+\usepackage{titlesec}
+\titleformat{\section}[hang]
+    {\huge\bfseries\color{myblue}}
+    {\thesection}
+    {1em}
+    {}
+    [\vspace{-1mm}{\color{myblue}\rule{\columnwidth}{1.5pt}}]
+\titlespacing{\section}{0pt}{0.5em}{0.3em}
+
+\titleformat{\subsection}[hang]
+    {\Large\bfseries\color{myblue!80}}
+    {\thesubsection}
+    {1em}
+    {}
+\titlespacing{\subsection}{0pt}{0.3em}{0.1em}
+
+% ===== 列表 =====
+\setlist{nosep, leftmargin=2.5em, itemsep=0.3em}
+
+% ===== 占位图 =====
+\newcommand{\placeholder}[2]{%
+    \begin{center}
+    \colorbox{mygray!12}{\parbox{0.9\columnwidth}{%
+        \centering
+        \vspace{1.5em}
+        {\Large\bfseries\color{mygray} [ 占位图： #1 ]}
+        \vspace{0.8em}
+        {\small\color{mygray} #2}
+        \vspace{1.5em}
+    }}
+    \end{center}
+}
+
+\begin{document}
+
+% =====================
+% 标题
+% =====================
+\begin{center}
+    {\fontsize{54}{64}\selectfont\bfseries\color{myblue}
+        从任务专用脑电解码器到脑电基座大模型：\\[3mm]
+        EEGNet、EEG Conformer 与 CBraMod 的复现与扩展评测\\[10mm]
+    }
+
+    {\fontsize{28}{34}\selectfont
+        第一作者 (SUSTech ID) \hspace{2em} 第二作者 (ID) \hspace{2em} 第三作者 (ID)\\[4mm]
+    }
+
+    {\fontsize{20}{28}\selectfont\color{mygray}
+        南方科技大学生物医学工程系 \hspace{3em}
+        BMEB215 机器学习与医学工程应用 · 2026 Spring
+    }
+
+    \vspace{6mm}
+    {\color{myblue}\hrule height 2.5pt}
+    \vspace{6mm}
+\end{center}
+
+\begin{multicols}{2}
+
+% ================================================================
+% 1. 背景 (Background)
+% ================================================================
+\section{研究背景 (Background)}
+
+\subsection{为什么需要脑电基座大模型？}
+
+EEG 解码长期面临三个核心困难：
+
+\begin{itemize}
+    \item \textbf{标注数据少} —— 多数 BCI、临床、情绪、睡眠数据集被试数量有限，标签成本高。
+    \item \textbf{跨域差异大} —— EEG 信号受被试、session、设备、导联、采样率和预处理流程影响明显。
+    \item \textbf{评测体系碎片化} —— 不同论文使用不同 split、滤波、输入尺度，模型之间难以公平比较。
+\end{itemize}
+
+传统任务专用模型 (CNN/RNN/Transformer) 在特定数据集上从零训练，优势是结构明确、参数量小、单任务性能强；劣势是缺少跨任务复用能力，换一个任务往往要重新设计、重新调参。
+
+基座大模型改变的是训练范式：先通过大规模 EEG 数据预训练学习通用表征，再通过 Linear Probing (LP) 或 Fine-Tuning (FT) 适配不同下游任务。
+
+\subsection{发展脉络}
+
+\begin{center}
+\begin{tabular}{llll}
+    \toprule
+    \textbf{阶段} & \textbf{代表工作} & \textbf{为什么选它} & \textbf{主要价值} \\
+    \midrule
+    深度学习进入 EEG & EEGNet (2018) & 紧凑、领域感知的深度监督模型 & 高效学习 EEG 特征 \\
+    全局时序建模 & EEG Conformer (2023) & CNN 前端 + Transformer 注意力 & 长程依赖 + Attention 可视化 \\
+    大规模预训练 & CBraMod (2025) & EEG Foundation Model & 预训练 → LP/FT 多任务适配 \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+
+\textbf{核心问题：}EEGNet 和 EEG Conformer 代表任务专用深度模型，CBraMod 代表从"训练专家模型"到"预训练通用表征再适配下游任务"的范式转变。为什么在专家模型已能在单任务上取得强性能时，我们仍需要脑电基座大模型？
+
+% ================================================================
+% 2. 方法 (Methods)
+% ================================================================
+\section{模型方法 (Methods)}
+
+\subsection{EEGNet —— 深度学习 EEG 解码代表}
+
+用紧凑 CNN 将 EEG 领域知识融入深度学习，是 EEG 解码中最经典的专家模型。
+
+\textbf{架构：}Temporal Convolution (频率时间滤波器) $\rightarrow$ Depthwise Spatial Convolution (通道空间模式) $\rightarrow$ Separable Convolution (降参)。每个下游任务单独监督训练。
+
+\textbf{定位：}任务专用深度模型 baseline，与 EEG Conformer、CBraMod 形成"专家模型 vs 基座模型"对照。
+
+\vspace{1em}
+
+\subsection{EEG Conformer —— Transformer 增强专家模型}
+
+在卷积局部特征提取之后引入 Transformer，用 Self-Attention 建模 Patch 间全局依赖。
+
+\textbf{架构：}CNN 前端提取局部 EEG 特征并形成 Patch Embedding $\rightarrow$ Transformer Encoder 建模长程时序依赖 $\rightarrow$ 分类头。Attention Map 可用于可视化分析。
+
+\textbf{定位：}比 EEGNet 更复杂的任务专用 baseline。进行"去掉 Transformer block"消融，检验 Attention 对单任务 EEG 解码的贡献。
+
+\vspace{1em}
+
+\subsection{CBraMod —— EEG 基座大模型}
+
+通过大规模预训练获得通用 EEG 表征，再迁移到不同下游任务。
+
+\textbf{下游适配：}CBraMod Backbone 输出 Channel-Patch 表征 $B \times C \times S \times D$。LP 冻结预训练 Backbone，只训练线性分类头；FT 同时更新 Backbone 和分类头。LP 衡量预训练表征本身是否可读，FT 衡量最终下游适配能力。
+
+\vspace{1em}
+
+\subsection{NeuroGate —— 神经先验融合}
+
+CBraMod 的 Embedding 虽然泛化能力强，但高维隐空间不直接暴露可解释生理量。NeuroGate 用显式 EEG 知识补充 Foundation Embedding。
+
+\textbf{做法：}提取人工神经先验特征 $m$（时域统计、Band Power、频谱形状、复杂度等），将 CBraMod 输出的 Backbone Embedding 记为 $h$，通过 Gated Fusion 学习门控权重 $g$：
+
+\[
+z = h + g \cdot \phi(m)
+\]
+
+目的不是让人工特征替代 Foundation Embedding，而是让模型在需要时利用可解释的 EEG 生理知识。
+
+\placeholder{模型架构对比}{%
+    EEGNet / EEG Conformer / CBraMod / NeuroGate 结构示意图。\\
+    展示四类模型的关键模块和架构差异。\quad (等待绘制)}
+
+% ================================================================
+% 3. 结果 (Results)
+% ================================================================
+\section{实验结果 (Results)}
+
+\subsection{CBraMod 下游任务能否复现？}
+
+{\footnotesize
+\begin{center}
+\rowcolors{2}{lightblue}{white}
+\begin{tabularx}{\columnwidth}{l>{\raggedright\arraybackslash}p{3.8cm}ccccccc}
+\toprule
+\multirow{2}{*}{\textbf{数据集}} & \multirow{2}{*}{\textbf{版本配置}} & \multirow{2}{*}{\textbf{Seeds}} &
+\multicolumn{2}{c}{\textbf{bAcc}} & \multicolumn{2}{c}{\textbf{\(\kappa\)}} &
+\multirow{2}{*}{\textbf{论文参考}} & \multirow{2}{*}{\textbf{结论}} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+& & & Mean & Best & Mean & Best & & \\
+\midrule
+BCIC2A & session T/E+CAR & 42/2024/3407 & 0.6382 & 0.6709 & 0.5177 & 0.5612 & \(\kappa\) 0.5138 & \cellcolor{mygreen!15}对齐 \\
+FACED & baseline official FT & 42/2024/3407 & 0.5245 & 0.5340 & 0.4617 & 0.4718 & bAcc 0.5509 & 接近 \\
+ISRUC-S1 & baseline official FT & 42/2024/3407 & 0.7780 & 0.7850 & 0.7128 & 0.7373 & bAcc 0.7865 & \cellcolor{mygreen!15}基本复现 \\
+Physionet-MI & flatten FT & 42/2024/3047 & 0.5975 & 0.6181 & 0.4631 & 0.4903 & bAcc 0.6417 & 接近 \\
+SEED-V & baseline official FT & 42/2024/3407 & 0.3927 & 0.4018 & 0.2450 & 0.2592 & bAcc 0.4091 & 接近 \\
+SHU-MI & flatten FT & 42/2024/3047 & 0.5851 & 0.6380 & 0.1700 & 0.2756 & bAcc 0.6370 & \cellcolor{mygreen!15}best 达到 \\
+MDD & flatten FT & 42/2024/3047 & \textbf{0.9034} & \textbf{0.9674} & \textbf{0.8008} & \textbf{0.9099} & bAcc 0.9560 & \cellcolor{mygreen!15}best 超过 \\
+TUEV & baseline official FT & 42/2024/3407 & 0.5499 & 0.5755 & 0.5964 & 0.6343 & \(\kappa\) 0.6671 & 未达 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\vspace{0.3em}
+{\small\color{mygray}注：bAcc = 平衡准确率，\(\kappa\) = Cohen's Kappa。Mean 为三种子均值，Best 为最优种子。论文参考值口径与对应列一致。}
+}
+
+\subsection{EEGNet 复现结果}
+
+作为任务专用专家模型 Baseline，我们使用原始 EEGNet 在四个运动想象数据集上进行了复现：
+
+{\footnotesize
+\begin{center}
+\rowcolors{2}{lightblue}{white}
+\begin{tabular}{lcccr}
+\toprule
+\textbf{数据集} & \textbf{类别数} & \textbf{Val Acc (\%)} & \textbf{Test Acc (\%)} & \textbf{Test \(\kappa\)} \\
+\midrule
+BCICIV2A & 4 & 79.17 & -- & -- \\
+BCICIV2B & 2 & 77.72 & 78.35 & 0.5669 \\
+IIIa & 4 & 55.95 & -- & -- \\
+Physionet MI (22ch) & 4 & 49.30 & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{center}
+\vspace{0.3em}
+{\small\color{mygray}注：BCICIV2A 和 BCICIV2B 为主要结果 (300 epochs)；IIIa 和 Physionet MI 为快速基线 (100 epochs, single seed)，仅作为实现通用性的补充证据。}
+}
+
+\subsection{复现中的关键经验}
+
+CBraMod 输出 $B \times C \times S \times D$，其中 $C$ 是通道、$S$ 是 Patch/Segment、$D$ 是隐层维度。如果下游 Head 过早对通道求平均 ($B \times C \times S \times D \rightarrow B \times S \times D$)，会丢失 MI 等任务依赖的空间分布信息。
+
+\textbf{可讲结论：}预训练表征不等于下游性能；Foundation Model 还需要与 EEG 结构匹配的 Downstream Readout。
+
+\placeholder{Readout 修正前后对比}{%
+    SHU-MI / Physionet-MI / MDD 数据集上的修正前 vs 修正后 bAcc。\\
+    保留 Channel-Patch 结构后部分任务明显恢复。\quad (等待队友数据)}
+
+\subsection{NeuroGate：神经先验能否增强预训练表征？}
+
+\textbf{可讲结论：}NeuroGate 的主证据在 LP，说明显式神经先验能补充 Frozen Foundation Embedding；FT 证据可作为辅助支持。详见表~\ref{tab:neurogate-lp} 和表~\ref{tab:neurogate-ft}。
+
+{\footnotesize
+\begin{center}
+\rowcolors{2}{lightblue}{white}
+\begin{tabular}{lccc}
+\toprule
+\textbf{数据集} & \textbf{CBraMod LP bAcc} & \textbf{NeuroGate LP bAcc} & \(\mathbf{\Delta}\) \\
+\midrule
+HMC & 0.6149 \(\pm\) 0.0256 & 0.6922 \(\pm\) 0.0172 & \cellcolor{mygreen!15}\(+\)0.0773 \\
+ISRUC-S1 & 0.5962 \(\pm\) 0.0579 & 0.6934 \(\pm\) 0.0156 & \cellcolor{mygreen!15}\(+\)0.0972 \\
+MDD & 0.8907 \(\pm\) 0.0477 & 0.9062 \(\pm\) 0.1101 & \(+\)0.0154 \\
+Physionet-MI & 0.2719 \(\pm\) 0.0176 & 0.2875 \(\pm\) 0.0083 & \(+\)0.0156 \\
+\bottomrule
+\end{tabular}
+\\[4pt]
+{\small\color{mygray}表 1：冻结骨干网络下的线性探测结果 (LP)。NeuroGate 在睡眠任务 (HMC, ISRUC-S1) 上提升最为显著。}
+\label{tab:neurogate-lp}
+\end{center}
+}
+
+{\footnotesize
+\begin{center}
+\rowcolors{2}{lightblue}{white}
+\begin{tabular}{lc}
+\toprule
+\textbf{实验设置} & \textbf{结果} \\
+\midrule
+LP channel-gated fusion 平均提升 (vs.\ backbone-only) & \cellcolor{mygreen!15}\(+\)0.0389 BA \\
+LP gated fusion 正提升单元比例 (dataset-backbone) & 40/48 \\
+CBraMod flatten-FT gated fusion 平均提升 & \(+\)0.0078 BA (9/12 为正) \\
+FT best-of-gated/logit 平均提升 & \(+\)0.0097 BA \\
+\bottomrule
+\end{tabular}
+\\[4pt]
+{\small\color{mygray}表 2：Selected-12 数据集上 FT 实验统计结论。}
+\label{tab:neurogate-ft}
+\end{center}
+}
+
+\subsection{为什么需要统一 EEG Foundation Benchmark？}
+
+目前 EEG Foundation Model 的结果分散在多篇论文中，不同模型、数据集和任务的协议不统一。统一 Benchmark 的必要性：
+
+\begin{itemize}
+    \item \textbf{公平比较} —— 同一数据集、同一 Split、同一预处理、同一指标
+    \item \textbf{发现泛化边界} —— 跨任务 Benchmark 暴露哪些任务仍然困难
+    \item \textbf{区分模型能力与协议差异} —— 减少因数据处理不同导致的伪差距
+\end{itemize}
+
+\placeholder{统一 Benchmark 扩展结果}{%
+    HMC / MDD / Siena\_EEG / SleepEDF\_full 等数据集上的 CBraMod 表现。\\
+    3-seed avg bAcc + 外部参考值对比。\quad (等待队友数据)}
+
+% ================================================================
+% 4. 总结 (Summary)
+% ================================================================
+\section{总结 (Summary)}
+
+\subsection{主要结论}
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{EEGNet 和 EEG Conformer 是任务专用专家模型代表}，展示了从紧凑深度模型到 Transformer 增强模型的路线。
+    \item \textbf{CBraMod 代表另一种范式：大规模预训练 + 下游适配}，优势不一定是单任务最高分，而是跨任务复用、少标签迁移和 Benchmark 扩展。
+    \item \textbf{专家模型和基座模型应该互补评价}，专家模型衡量单任务上限，基座模型衡量通用表征和迁移能力。
+    \item \textbf{CBraMod 的下游性能依赖合理 Readout}，保留 Channel-Patch 结构比过早通道池化更适合 EEG 任务。
+    \item \textbf{NeuroGate 提供了可解释性补充}，通过 Gated Fusion 注入显式 EEG 神经先验，LP 证据最强。
+    \item \textbf{统一 Benchmark 是 EEG Foundation Model 发展的必要基础}。
+\end{enumerate}
+
+\subsection{如果评委只记住一句话}
+
+\begin{center}
+\colorbox{lightblue}{\parbox{0.95\columnwidth}{\centering
+    {\LARGE\bfseries
+        EEG Foundation Models 正在解决泛化问题，\\[3mm]
+        而可解释性正在成为新的瓶颈。}\\[4mm]
+    {\large
+        NeuroGate 尝试将神经科学知识重新引入 Foundation Models\\
+        —— 其中一个可能的方向。}
+}}
+\end{center}
+
+% ================================================================
+% 参考文献
+% ================================================================
+\vspace{1em}
+\section*{参考文献}
+
+{\footnotesize
+\begin{enumerate}[leftmargin=2em]
+    \item Lawhern et al. \textbf{EEGNet: A Compact Convolutional Neural Network for EEG-based Brain-Computer Interfaces}. \textit{J. Neural Eng.}, 2018.
+    \item Song et al. \textbf{EEG Conformer: Convolutional Transformer for EEG Decoding and Visualization}. \textit{IEEE TNSRE}, 2023.
+    \item Wang et al. \textbf{CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding}. \textit{ICLR}, 2025.
+    \item NeuroGate / NeuroKE 内部参考：neural-prior gated fusion experiments under LP and FT.
+    \item 本地复现记录：\texttt{cbramod\_reproduction\_results\_summary.md}
+\end{enumerate}
+}
+
+\end{multicols}
+
+% =====================
+% 底部
+% =====================
+\vspace{4mm}
+{\color{myblue}\hrule height 2pt}
+\vspace{3mm}
+\begin{center}
+{\footnotesize\color{mygray}
+    BMEB215 · 机器学习与医学工程应用 · 2026 Spring \hspace{3em}
+    南方科技大学 · 生物医学工程系
+}
+\end{center}
+
+\end{document}
