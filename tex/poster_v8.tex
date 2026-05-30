@@ -1,0 +1,340 @@
+\documentclass[12pt, a0paper]{article}
+
+% ===== 页面 =====
+\usepackage[
+    paperwidth=84.1cm,
+    paperheight=118.9cm,
+    margin=2cm,
+    columnsep=2cm
+]{geometry}
+
+% ===== 中文 =====
+\usepackage{ctex}
+
+% ===== 双栏 =====
+\usepackage{multicol}
+
+% ===== 表格 =====
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{booktabs}
+
+% ===== 其他 =====
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ===== 颜色 =====
+\definecolor{myblue}{RGB}{25,55,109}
+\definecolor{myorange}{RGB}{200,100,20}
+\definecolor{mygreen}{RGB}{30,120,70}
+\definecolor{myred}{RGB}{180,40,40}
+\definecolor{mygray}{RGB}{130,130,130}
+\definecolor{mypurple}{RGB}{100,40,160}
+\definecolor{lightblue}{RGB}{235,245,255}
+
+% ===== 字体缩放 (A0) =====
+\renewcommand{\normalsize}{\fontsize{22}{30}\selectfont}
+\renewcommand{\large}{\fontsize{28}{36}\selectfont}
+\renewcommand{\Large}{\fontsize{34}{42}\selectfont}
+\renewcommand{\LARGE}{\fontsize{40}{48}\selectfont}
+\renewcommand{\huge}{\fontsize{48}{56}\selectfont}
+\renewcommand{\Huge}{\fontsize{56}{64}\selectfont}
+\renewcommand{\small}{\fontsize{18}{24}\selectfont}
+\renewcommand{\footnotesize}{\fontsize{15}{20}\selectfont}
+
+% ===== 收紧间距 =====
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+\setlength{\multicolsep}{0.5em}
+\raggedbottom
+
+% ===== 节标题 =====
+\usepackage{titlesec}
+\titleformat{\section}[hang]
+    {\huge\bfseries\color{myblue}}
+    {\thesection}
+    {1em}
+    {}
+    [\vspace{-1mm}{\color{myblue}\rule{\columnwidth}{1.5pt}}]
+\titlespacing{\section}{0pt}{0.5em}{0.3em}
+
+\titleformat{\subsection}[hang]
+    {\Large\bfseries\color{myblue!80}}
+    {\thesubsection}
+    {1em}
+    {}
+\titlespacing{\subsection}{0pt}{0.3em}{0.1em}
+
+% ===== 列表 =====
+\setlist{nosep, leftmargin=2.5em, itemsep=0.3em}
+
+% ===== 占位图 =====
+\newcommand{\placeholder}[2]{%
+    \begin{center}
+    \colorbox{mygray!12}{\parbox{0.9\columnwidth}{%
+        \centering
+        \vspace{1.5em}
+        {\Large\bfseries\color{mygray} [ 占位图： #1 ]}
+        \vspace{0.8em}
+
+        {\small\color{mygray} #2}
+        \vspace{1.5em}
+    }}
+    \end{center}
+}
+
+\begin{document}
+
+% =====================
+% 标题
+% =====================
+\begin{center}
+    {\fontsize{58}{68}\selectfont\bfseries\color{myblue}
+        EEG 解码模型的发展：\\[3mm]
+        从 EEGNet 到 EEG Foundation Model 的复现与分析\\[8mm]
+    }
+
+    {\fontsize{30}{38}\selectfont\color{mygray}
+        基于 EEGNet、EEG Conformer 和 CBraMod 的比较研究\\[10mm]
+    }
+
+    {\fontsize{28}{34}\selectfont
+        第一作者 (SUSTech ID) \hspace{2em} 第二作者 (ID) \hspace{2em} 第三作者 (ID)\\[4mm]
+    }
+
+    {\fontsize{20}{28}\selectfont\color{mygray}
+        南方科技大学生物医学工程系 \hspace{3em}
+        BMEB215 机器学习与医学工程应用 · 2026 Spring
+    }
+
+    \vspace{6mm}
+    {\color{myblue}\hrule height 2.5pt}
+    \vspace{6mm}
+\end{center}
+
+\begin{multicols}{2}
+
+% ================================================================
+% 1. 研究背景
+% ================================================================
+\section{研究背景 (Background)}
+
+\subsection{EEG 解码的重要应用}
+
+脑机接口 (BCI) · 睡眠分期 (Sleep Staging) · 神经疾病辅助诊断 · 认知状态监测
+
+\subsection{EEG 解码面临的挑战}
+
+\begin{itemize}
+    \item 数据标注成本高 —— 临床、睡眠等任务需要专家标注
+    \item 被试间差异显著 —— 个体差异导致模型难以泛化
+    \item 设备差异显著 —— 不同设备、导联、采样率带来分布偏移
+    \item 模型泛化能力有限 —— 单任务训练，跨任务复用困难
+\end{itemize}
+
+\subsection{项目目标}
+
+复现三个具有代表性的 EEG 解码模型，分析其设计思路、表征能力和泛化能力的演化：
+
+\begin{center}
+\Large\bfseries
+EEGNet \quad $\longrightarrow$ \quad EEG Conformer \quad $\longrightarrow$ \quad CBraMod
+\end{center}
+
+% ================================================================
+% 2. 模型复现
+% ================================================================
+\section{模型复现 (Methods)}
+\subsection{模型结构比较}
+
+\begin{center}
+\begin{tabular}{lccc}
+    \toprule
+    \textbf{模型} & \textbf{CNN} & \textbf{Transformer} & \textbf{预训练} \\
+    \midrule
+    EEGNet        & $\checkmark$ & -- & -- \\
+    EEG Conformer & $\checkmark$ & $\checkmark$ & -- \\
+    CBraMod       & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
+    \bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+
+\textbf{主要发现：}从 EEGNet 到 EEG Conformer 再到 CBraMod，模型表现出更强的表征能力、更好的跨任务泛化能力，以及更复杂的模型结构。
+
+\subsection{EEGNet · CNN 时代}
+
+\textbf{核心思想：}利用 EEG 领域知识设计轻量化卷积网络。
+
+\textbf{关键模块：}Temporal Convolution $\rightarrow$ Depthwise Convolution $\rightarrow$ Separable Convolution
+
+\textbf{特点：}局部时空特征提取，参数量小，适合小样本 EEG 任务。
+
+\vspace{1em}
+
+\subsection{EEG Conformer · CNN + Transformer 时代}
+
+\textbf{核心思想：}结合 CNN 局部特征提取与 Transformer 全局建模。
+
+\textbf{关键模块：}Convolution Module + Multi-Head Self-Attention
+
+\textbf{特点：}同时建模局部特征与全局依赖，增强长时程信息捕获能力。
+
+\vspace{1em}
+
+\subsection{CBraMod · Foundation Model 时代}
+
+\textbf{核心思想：}基于大规模脑电数据预训练，学习通用 EEG 表征。
+
+\textbf{关键模块：}EEG Tokenization $\rightarrow$ Criss-Cross Attention $\rightarrow$ Self-Supervised Pretraining
+
+\textbf{特点：}学习通用脑电表征，支持跨任务迁移，提升泛化能力。
+
+\placeholder{模型架构对比}{%
+    EEGNet / EEG Conformer / CBraMod 结构示意图。\\
+    展示三个模型的关键模块和架构差异。\quad (等待绘制)}
+
+% ================================================================
+% 3. 复现结果
+% ================================================================
+\section{复现结果 (Results)}
+
+\subsection{模型性能比较}
+
+\placeholder{模型性能对比}{%
+    三个模型在多个数据集上的性能比较。\\
+    指标：Accuracy / F1 Score / Cohen's Kappa。\\
+    \small (等待队友复现结果)}
+
+\subsection{训练效率比较}
+
+\placeholder{训练效率对比}{%
+    三个模型的参数量 / 训练时间 / 推理速度对比。\\
+    \small (等待队友复现结果)}
+
+
+
+% ================================================================
+% 4. 分析与讨论
+% ================================================================
+\section{分析与讨论 (Discussion)}
+
+\subsection{观察一：模型能力持续提升}
+
+\begin{center}
+\Large\bfseries
+局部特征 \quad $\longrightarrow$ \quad 全局依赖 \quad $\longrightarrow$ \quad 通用表征
+\end{center}
+
+从 CNN 局部时空特征，到 Transformer 全局时序依赖，再到预训练通用表征——每一步都提升了模型的表征空间和泛化边界。
+
+\subsection{观察二：Foundation Model 成为新的趋势}
+
+CBraMod 通过大规模预训练，利用海量无标签 EEG 数据学习通用表示，支持多任务迁移。这改变了 EEG 解码的训练范式：不再为每个任务单独训练，而是预训练后再适配。
+
+\subsection{观察三：可解释性成为新的挑战}
+
+传统 EEG 分析依赖 Alpha、Beta、Theta、Delta 等频段特征，容易与神经科学知识对应。而 Foundation Model 的表征是 Embedding 高维向量，虽然泛化能力更强，但其生理意义更难解释。
+
+\begin{center}
+\colorbox{myorange!10}{\parbox{0.9\columnwidth}{\centering\bfseries
+    泛化能力 $\uparrow$ \hspace{2em} 但 \hspace{2em} 解释难度 $\uparrow$
+}}
+\end{center}
+
+随着 Foundation Model 的发展，如何理解模型学到的内容，正在成为新的研究问题。
+
+\placeholder{可解释性挑战示意图}{%
+    传统 EEG 分析 (Alpha/Beta/Theta + 可解释生理量)\\
+    $\downarrow$\\
+    Foundation Embeddings (高维隐空间 · 泛化强但难以理解)\\
+    $\downarrow$\\
+    抽象程度递增，解释难度增大。\quad (等待绘制)}
+
+% ================================================================
+% 5. 未来工作
+% ================================================================
+\section{未来工作 (Future Work)}
+
+\subsection{NeuroGate：重新引入神经科学知识}
+
+\textbf{目标：}
+
+\begin{center}
+\Large\bfseries
+Foundation Model \quad + \quad Neuroscience Prior
+\end{center}
+
+\textbf{思路：}CBraMod Embedding + 神经科学先验知识（频带能量、时域统计等）$\rightarrow$ Gated Fusion $\rightarrow$ 分类预测。
+
+\vspace{1em}
+
+\textbf{研究问题：}是否能够在保持 Foundation Model 泛化能力的同时，提高模型的可解释性？
+
+\placeholder{NeuroGate 结构示意图}{%
+    CBraMod Backbone + 神经科学先验\\
+    $\downarrow$ Gated Fusion\\
+    增强表征 (泛化 + 可解释性)\\
+    \small (等待绘制)}
+
+\placeholder{NeuroGate 实验结果}{%
+    LP / FT 下 NeuroGate vs Baseline 的对比结果。\\
+    \small (等待队友复现结果)}
+
+% ================================================================
+% 6. 总结
+% ================================================================
+\section{总结 (Summary)}
+
+\begin{center}
+\colorbox{lightblue}{\parbox{0.95\columnwidth}{\centering
+    {\LARGE\bfseries
+        泛化能力持续提升\par}
+    \vspace{1.5em}
+    {\large
+        EEGNet/EEG Conformer $\rightarrow$ CBraMod\par}
+    \vspace{1em}
+    {\large
+        但可解释性问题逐渐凸显\par}
+    \vspace{1.5em}
+    {\large\bfseries
+        未来方向：Foundation Model + Neuroscience Prior\\[2mm]
+        $\rightarrow$ 强泛化 + 强解释\par}
+}}
+\end{center}
+
+% ================================================================
+% 参考文献
+% ================================================================
+\vspace{1em}
+\section*{参考文献}
+
+{\footnotesize
+\begin{enumerate}[leftmargin=2em]
+    \item Lawhern et al. \textbf{EEGNet: A Compact Convolutional Neural Network for EEG-based Brain-Computer Interfaces}. \textit{J. Neural Eng.}, 2018.
+    \item Song et al. \textbf{EEG Conformer: Convolutional Transformer for EEG Decoding and Visualization}. \textit{IEEE TNSRE}, 2023.
+    \item Wang et al. \textbf{CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding}. \textit{ICLR}, 2025.
+    \item NeuroGate / NeuroKE 内部参考：neural-prior gated fusion experiments.
+\end{enumerate}
+}
+
+\end{multicols}
+
+% =====================
+% 底部
+% =====================
+\vspace{4mm}
+{\color{myblue}\hrule height 2pt}
+\vspace{3mm}
+\begin{center}
+{\footnotesize\color{mygray}
+    BMEB215 · 机器学习与医学工程应用 · 2026 Spring \hspace{3em}
+    南方科技大学 · 生物医学工程系
+}
+\end{center}
+
+\end{document}

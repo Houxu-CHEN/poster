@@ -1,0 +1,333 @@
+\documentclass[12pt, a0paper]{article}
+
+% ===== 页面设置 =====
+\usepackage[
+    paperwidth=84.1cm,
+    paperheight=135cm,
+    margin=1.5cm,
+    columnsep=1.8cm
+]{geometry}
+
+% ===== 中文 =====
+\usepackage{ctex}
+
+% ===== 双栏 =====
+\usepackage{multicol}
+
+% ===== 表格颜色 =====
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage{multirow}
+
+% ===== 标题格式 =====
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{amsmath}
+
+% ===== 颜色 =====
+\definecolor{myblue}{RGB}{25,55,109}
+\definecolor{myorange}{RGB}{200,100,20}
+\definecolor{mygreen}{RGB}{30,120,70}
+\definecolor{myred}{RGB}{180,40,40}
+\definecolor{mygray}{RGB}{130,130,130}
+\definecolor{mypurple}{RGB}{100,40,160}
+\definecolor{lightblue}{RGB}{235,245,255}
+
+% ===== 字体缩放（A0 需要大字体）=====
+\renewcommand{\normalsize}{\fontsize{22}{30}\selectfont}
+\renewcommand{\large}{\fontsize{28}{36}\selectfont}
+\renewcommand{\Large}{\fontsize{34}{42}\selectfont}
+\renewcommand{\LARGE}{\fontsize{40}{48}\selectfont}
+\renewcommand{\huge}{\fontsize{48}{56}\selectfont}
+\renewcommand{\Huge}{\fontsize{58}{66}\selectfont}
+\renewcommand{\small}{\fontsize{18}{24}\selectfont}
+\renewcommand{\footnotesize}{\fontsize{15}{20}\selectfont}
+
+% ===== 收紧间距 =====
+\setlength{\parskip}{0.3em}
+\setlength{\parindent}{0pt}
+\setlength{\multicolsep}{0.5em}
+\raggedbottom
+
+% ===== 节标题格式 =====
+\titleformat{\section}[hang]
+    {\huge\bfseries\color{myblue}}
+    {\thesection}
+    {1em}
+    {}
+    [\vspace{-1mm}{\color{myblue}\rule{\columnwidth}{1.5pt}}]
+\titlespacing{\section}{0pt}{0.5em}{0.3em}
+
+\titleformat{\subsection}[hang]
+    {\Large\bfseries\color{myblue}}
+    {\thesubsection}
+    {1em}
+    {}
+\titlespacing{\subsection}{0pt}{0.3em}{0.1em}
+
+% ===== 列表间距 =====
+\setlist{nosep, leftmargin=3em, itemsep=0.5em}
+
+% ===== 双栏脚注线 =====
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot{}
+
+% ===== 占位图命令 =====
+\newcommand{\placeholder}[2]{%
+    \begin{center}
+    \colorbox{mygray!12}{\parbox{0.9\columnwidth}{%
+        \centering
+        \vspace{1.5em}
+        {\Large\bfseries\color{mygray} [ 占位图： #1 ]}
+        \vspace{1em}
+
+        {\small\color{mygray} #2}
+        \vspace{1.5em}
+    }}
+    \end{center}
+}
+
+% ===== 高亮框 =====
+\newcommand{\highlight}[1]{%
+    \colorbox{lightblue}{\parbox{\columnwidth}{\centering\bfseries #1}}
+}
+
+\begin{document}
+
+% =====================
+% 标题区（跨双栏）
+% =====================
+\begin{center}
+    {\fontsize{64}{76}\selectfont\bfseries\color{myblue}
+        从任务专用模型到基础模型：\\[5mm]
+        EEG 解码的泛化能力演进与可解释性挑战\\[12mm]
+    }
+
+    {\fontsize{32}{40}\selectfont
+        第一作者 (SUSTech ID) \hspace{2em} 第二作者 (ID) \hspace{2em} 第三作者 (ID)\\[5mm]
+    }
+
+    {\fontsize{24}{32}\selectfont\color{mygray}
+        南方科技大学生物医学工程系 \hspace{3em}
+        BMEB215 机器学习与医学工程应用 · 2026 Spring
+    }
+
+    \vspace{8mm}
+    {\color{myblue}\hrule height 3pt}
+    \vspace{8mm}
+\end{center}
+
+% =====================
+% 双栏正文
+% =====================
+\begin{multicols}{2}
+
+% ================================================================
+% 1. 引言
+% ================================================================
+\section{引言：为什么需要更强的 EEG 模型？}
+
+EEG 在脑机接口、临床诊断、睡眠分期、情绪识别等领域应用广泛，但其解码长期面临三个核心困难：
+
+\textbf{标注昂贵。}临床诊断、睡眠分期、运动想象等任务需要专家标注或严格实验设计，标签成本高，难以大规模扩充。
+
+\textbf{被试差异大。}EEG 信号受被试、session、设备、导联、采样率和预处理流程的影响明显，同一任务在不同条件下的分布偏移严重。
+
+\textbf{泛化能力差。}传统任务专用模型通常在特定数据集上从零训练或强监督训练，换一个任务往往需要重新设计、重新调参，跨任务复用困难。
+
+面对这些挑战，EEG 解码模型经历了从紧凑 CNN、到 CNN+Transformer 混合架构、再到大规模预训练基础模型的演进。本文沿着这条主线展开，并追问：\textbf{模型越来越强之后，我们失去了什么？}
+
+% ================================================================
+% 2. 模型演进
+% ================================================================
+\section{模型演进：Foundation Model 是如何出现的？}
+
+\subsection{第一阶段：EEGNet（2018）—— 紧凑 CNN 专家模型}
+
+EEGNet 不是简单的“CNN 阶段”，而是深度学习进入 EEG 解码领域的代表性工作。它用 Temporal Convolution 学习频率相关的时间滤波器，Depthwise Spatial Convolution 学习通道空间模式，再加 Separable Convolution 降参，形成紧凑而领域感知的结构。每个下游任务单独监督训练，在单任务上表现强劲，但局限也很明显——感受野偏局部，跨任务复用弱，仍是任务专用训练范式。
+
+\subsection{第二阶段：EEG Conformer（2023）—— CNN + Transformer}
+
+EEG Conformer 在卷积局部特征提取之后引入 Transformer Encoder，用 Self-Attention 建模 Patch 之间的全局依赖。这一步的意义不仅是结构升级：自注意力支持并行计算，参数可扩展，使模型开始具备适配大规模预训练的结构基础。在本项目中，我们还进行了“去掉 Transformer Block”的消融实验，以检验 Attention 对单任务 EEG 解码的贡献。
+
+\subsection{第三阶段：CBraMod（2025）—— EEG Foundation Model}
+
+CBraMod 用 Criss-Cross 注意力机制和大规模 EEG 预训练，实现了从“每个任务训练专家模型”到“预训练通用表征再适配下游任务”的范式转变。其 Backbone 输出 Channel-Patch 表征 $B \times C \times S \times D$，下游通过 Linear Probing（LP，冻结 Backbone）或 Full Fine-Tuning（FT）适配不同任务。LP 衡量预训练表征本身的可读性，FT 衡量最终下游适配能力。
+
+\vspace{2em}
+\highlight{核心结论：模型能力不断增强，泛化能力不断提高。从 CNN 局部特征，到 Transformer 全局建模，再到预训练通用表征。}
+
+\vspace{2em}
+
+\placeholder{模型架构对比}{%
+    EEGNet / EEG Conformer / CBraMod 结构示意图。\\
+    展示三类模型的输入、骨干网络、输出头结构差异。\\
+    \small (等待绘制或队友提供)}
+
+% ================================================================
+% 3. 可解释性挑战
+% ================================================================
+\section{可解释性挑战：模型变强后，我们失去了什么？}
+
+模型能力的提升伴随着表征的不断抽象化。
+
+\textbf{传统 EEG 分析}依赖显式生理特征：Alpha、Beta、Theta、Delta 频段的能量分布，时域统计量（均值、方差、峰度），复杂度特征（样本熵、Lempel-Ziv 复杂度）等。这些特征直接对应可解释的生理量，研究者可以明确说出模型在用什么信息做决策。
+
+\textbf{深度特征}虽然可以部分可视化（如 CNN 卷积核的频带偏好、Transformer Attention Map 的时间-通道关注模式），但语义已经不再明确——一个卷积核可能混合了多个频带的信息，一个 Attention Head 可能关注的是“某种统计模式”而非特定的生理事件。
+
+\textbf{Foundation Embeddings}将这一问题推到了极致。CBraMod 等基座模型输出的高维隐空间向量泛化能力极强，但单看一个 Embedding 维度几乎无法对应任何经典的 EEG 描述符。基座模型的表征虽然泛化能力强，但可解释性正成为一个不容忽视的问题。
+
+\begin{center}
+\colorbox{myorange!10}{\parbox{0.95\columnwidth}{\centering\bfseries
+    表征越来越抽象 \quad $\Rightarrow$ \quad 解释难度增大}}
+\end{center}
+
+\vspace{1em}
+
+\textbf{措辞注意：}本海报使用“Interpretability Challenge”（可解释性挑战），而非“可解释性下降”。我们不需要证明它一定下降了——只需指出，模型学到的表征越来越难以被人类理解，这正在成为下一阶段的关键问题。
+
+\placeholder{可解释性挑战示意图}{%
+    传统 EEG 特征（Alpha/Beta/Theta 频段 · 可解释生理量）\\
+    $\downarrow$\\
+    深度特征（CNN 卷积核 · Attention Map · 语义不明确）\\
+    $\downarrow$\\
+    Foundation Embeddings（高维隐空间向量 · 泛化强但难以理解）\\
+    $\downarrow$\\
+    抽象程度递增，解释难度增大。\\
+    \small (等待绘制)}
+
+% ================================================================
+% 4. 对比分析
+% ================================================================
+\section{对比总结：一张表看完全文}
+
+\begin{center}
+{\small\itshape\color{mygray} 评委即使只看这张表也能理解核心观点}
+
+\vspace{1em}
+
+\begin{tabular}{|l|c|c|c|}
+    \hline
+    \textbf{模型} & \textbf{核心思想} & \textbf{泛化能力} & \textbf{可解释性} \\
+    \hline
+    EEGNet        & CNN               & \textcolor{myred}{低}    & \textcolor{mygreen}{高}     \\
+    \hline
+    EEG Conformer & CNN + Transformer & \textcolor{myorange}{中}  & \textcolor{myorange}{中}    \\
+    \hline
+    CBraMod       & 大规模预训练      & \textcolor{mygreen}{高}   & \textcolor{myred}{较低}     \\
+    \hline
+    \rowcolor{mygreen!10}
+    \textbf{+ NeuroGate} & \textbf{+ 神经科学先验} & \textcolor{mygreen}{\textbf{高}} & \textcolor{myblue}{\textbf{预期更高}} \\
+    \hline
+\end{tabular}
+\end{center}
+
+\vspace{1em}
+
+模型越强 $\rightarrow$ 泛化越好 $\rightarrow$ 但可解释性越难。这张表是整张海报的压缩版。
+
+\placeholder{CBraMod 复现结果}{%
+    CBraMod 原论文任务复现主表。\\
+    包含 BCIC2A、FACED、ISRUC-S1、Physionet-MI、SEED-V、SHU-MI、MDD、TUEV 等数据集。\\
+    每项报告 3-seed avg bAcc、best bAcc、论文参考值。\\
+    \small (等待队友复现结果填入)}
+
+% ================================================================
+% 5. 未来方向：NeuroGate
+% ================================================================
+\section{未来方向：NeuroGate}
+
+\subsection{为什么需要 NeuroGate？}
+
+基座大模型的一个重要问题是可解释性不足。CBraMod 的 Embedding 虽然泛化能力强，但高维隐空间不直接暴露频带能量、时域统计、复杂度等可解释生理量。NeuroGate 的思路是用显式 EEG 知识补充 Foundation Embedding：提取人工神经先验特征，通过 Gated Fusion 与 Backbone Embedding 融合。
+
+\subsection{融合方式}
+
+对每个 EEG Segment 提取人工神经先验特征向量 $m$（时域统计、Band Power、频谱形状、复杂度特征等）。将 CBraMod 输出的 Backbone Embedding 记为 $h$，用一个小的投影网络 $\phi$ 把 $m$ 映射到与 $h$ 可融合的空间，通过门控权重 $g$ 控制模型在多大程度上接受人工先验：
+
+\[
+z = h + g \cdot \phi(m)
+\]
+
+这样做的目的是让人工特征补充 Backbone Embedding，而非替代它。门控机制允许模型自主决定接受多少先验——在人工先验有用的任务上接受更多，在先验噪声大的任务上适度忽略。
+
+\subsection{实验证据}
+
+LP（冻结 Backbone）下，NeuroGate 在 HMC 睡眠分期（$+0.0773$）、ISRUC-S1（$+0.0972$）等依赖频谱节律结构的任务上提升明显，说明人工先验能补充 Frozen Embedding 中不易被线性头读出的信息。FT 下提升较小但总体为正。
+
+\begin{center}
+\colorbox{mypurple!8}{\parbox{0.95\columnwidth}{\centering\bfseries
+    NeuroGate represents one possible direction.}}
+\end{center}
+
+\vspace{1em}
+
+{\small
+\textcolor{myred}{[不写]} NeuroGate 解决了可解释性问题。\hspace{2em}
+\textcolor{myblue}{[而写]} NeuroGate represents one possible direction.
+}
+
+\placeholder{NeuroGate 结构示意图}{%
+    CBraMod Backbone \quad + \quad 神经科学先验（频带能量 · 时域统计 · 复杂度）\\
+    $\downarrow$\\
+    Gated Fusion：$z = h + g \cdot \phi(m)$\\
+    $\downarrow$\\
+    增强表征（泛化能力 + 可解释性）\\
+    \small (等待绘制)}
+
+\placeholder{NeuroGate 实验结果}{%
+    HMC / ISRUC-S1 / MDD / Physionet-MI 等数据集上的 LP 对比。\\
+    CBraMod LP vs NeuroGate LP 柱状图或表格。\\
+    \small (等待队友复现结果)}
+
+% ================================================================
+% 结论
+% ================================================================
+\section{如果评委只记住一句话}
+
+\begin{center}
+\colorbox{lightblue}{\parbox{0.95\columnwidth}{\centering\LARGE\bfseries
+    EEG Foundation Models 正在解决泛化问题，\\
+    而可解释性正在成为新的瓶颈。\\[5mm]
+    \Large
+    NeuroGate 尝试将神经科学知识重新引入 Foundation Models\\
+    —— 其中一个可能的方向。}}
+\end{center}
+
+\vspace{2em}
+
+% ================================================================
+% 参考文献
+% ================================================================
+\section*{参考文献}
+
+{\footnotesize
+\begin{enumerate}[leftmargin=2em]
+    \item Lawhern et al. \textbf{EEGNet: A Compact Convolutional Neural Network for EEG-based Brain-Computer Interfaces}. \textit{Journal of Neural Engineering}, 2018.
+    \item Song et al. \textbf{EEG Conformer: Convolutional Transformer for EEG Decoding and Visualization}. \textit{IEEE Transactions on Neural Systems and Rehabilitation Engineering}, 2023.
+    \item Wang et al. \textbf{CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding}. \textit{ICLR}, 2025.
+    \item NeuroGate / NeuroKE 内部参考：neural-prior gated fusion experiments under LP and FT.
+    \item 本地复现记录：\texttt{cbramod\_reproduction\_results\_summary.md}
+\end{enumerate}
+}
+
+\end{multicols}
+
+% =====================
+% 底部线
+% =====================
+\vspace{5mm}
+{\color{myblue}\hrule height 2pt}
+\vspace{3mm}
+\begin{center}
+{\footnotesize\color{mygray}
+    BMEB215 · 机器学习与医学工程应用 · 2026 Spring \hspace{3em}
+    南方科技大学 · 生物医学工程系
+}
+\end{center}
+
+\end{document}

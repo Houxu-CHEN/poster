@@ -1,0 +1,358 @@
+\documentclass[25pt, a0paper, portrait, margin=12mm, innermargin=10mm, blockverticalspace=8mm, colspace=12mm]{tikzposter}
+
+% ===== 中文 =====
+\usepackage{ctex}
+
+% ===== 表格颜色 =====
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+
+% ===== TikZ =====
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, backgrounds, calc, shadows.blur, fit, decorations.pathreplacing}
+
+% ===== 颜色 =====
+\definecolor{myblue}{RGB}{25,55,109}
+\definecolor{myorange}{RGB}{230,120,23}
+\definecolor{mygreen}{RGB}{40,130,90}
+\definecolor{myred}{RGB}{200,50,50}
+\definecolor{mygray}{RGB}{130,130,130}
+\definecolor{mycyan}{RGB}{30,140,150}
+\definecolor{mypurple}{RGB}{120,50,180}
+\definecolor{mybg}{RGB}{248,250,252}
+
+% ===== 主题 =====
+\usetheme{Default}
+\usecolorstyle{Default}
+
+% ===== 标题 =====
+\settitle{
+    \vbox{
+        \centering
+        \color{white}\bfseries
+        \fontsize{48}{56}\selectfont
+        从任务专用模型到基础模型：
+        \fontsize{34}{42}\selectfont
+        EEG 解码的泛化能力演进与可解释性挑战
+    }
+}
+\author{\fontsize{22}{28}\selectfont 第一作者 (SUSTech ID) \quad 第二作者 (ID) \quad 第三作者 (ID)}
+\titlegraphic{\fontsize{16}{20}\selectfont BMEB215 \quad 机器学习与医学工程应用 \quad 2026 Spring}
+
+% 自定义标题背景色
+\definecolor{titlebg}{RGB}{25,55,109}
+\colorlet{blocktitlebgcolor}{myblue}
+\colorlet{blocktitlefgcolor}{white}
+
+\useblockstyle{Basic}
+
+\begin{document}
+
+\maketitle
+
+\begin{columns}
+
+% ================================================================
+% 左栏
+% ================================================================
+\column{0.5}
+
+% === 1. 引言 ===
+\block{1. 引言：为什么需要更强的 EEG 模型？}{
+    \textbf{EEG 应用广泛，但面临三大痛点：}
+    \begin{itemize}
+        \item \textbf{标注昂贵} —— 临床诊断、睡眠分期、运动想象等需要专家标注
+        \item \textbf{被试差异大} —— session、设备、导联不同，分布偏移严重
+        \item \textbf{泛化能力差} —— 单任务训练，跨任务复用困难
+    \end{itemize}
+
+    \vspace{4mm}
+    {\centering\large\bfseries
+        EEG 模型如何一步步发展到 Foundation Model？\\
+        这种发展又带来了什么新的问题？
+    \par}
+}
+
+% === [图1] 模型演进 ===
+\block{2. 模型演进：从专家模型到基础模型}{
+
+    \vspace{-4mm}
+    {\centering
+    \resizebox{0.98\linewidth}{!}{%
+    \begin{tikzpicture}[
+        box/.style={draw=myblue, very thick, rounded corners=12pt, fill=myblue!5, align=center,
+                    minimum width=6.2cm, minimum height=3.8cm},
+        arrow/.style={->, >=Stealth, line width=3pt, myorange}]
+
+        \node [box] (eegnet) {
+            \textbf{\LARGE EEGNet}\\[2mm]
+            \footnotesize CNN · 紧凑架构\\
+            \footnotesize Temporal Conv $\rightarrow$ Depthwise Conv\\
+            \footnotesize $\rightarrow$ Separable Conv\\
+            \footnotesize 局部时空特征 · 人工归纳偏置
+        };
+        \node [above=0mm of eegnet.north, font=\Huge\bfseries, text=myblue] {2018};
+
+        \node [box, right=3.5cm of eegnet] (conformer) {
+            \textbf{\LARGE EEG Conformer}\\[2mm]
+            \footnotesize CNN 前端 + Transformer Encoder\\
+            \footnotesize Self-Attention $\rightarrow$ 全局依赖\\
+            \footnotesize 并行计算 $\rightarrow$ 参数可扩展\\
+            \footnotesize 为预训练提供架构基础
+        };
+        \node [above=0mm of conformer.north, font=\Huge\bfseries, text=myblue] {2023};
+
+        \node [box, right=3.5cm of conformer] (cbramod) {
+            \textbf{\LARGE CBraMod}\\[2mm]
+            \footnotesize Criss-Cross Attention\\
+            \footnotesize 大规模 EEG 预训练\\
+            \footnotesize 通用表征 $\rightarrow$ LP/FT 多任务\\
+            \footnotesize \textbf{Foundation Model}
+        };
+        \node [above=0mm of cbramod.north, font=\Huge\bfseries, text=myblue] {2025};
+
+        \draw [arrow] (eegnet.east) -- (conformer.west)
+            node[midway, above, font=\footnotesize\bfseries, text=myorange] {泛化能力 $\uparrow$};
+        \draw [arrow] (conformer.east) -- (cbramod.west)
+            node[midway, above, font=\footnotesize\bfseries, text=myorange] {迁移能力 $\uparrow$};
+
+        \node [below=3mm of $(conformer.south)!0.5!(cbramod.south)$, font=\small\bfseries, text=myblue] {
+            CNN 局部 $\longrightarrow$ Transformer 全局 $\longrightarrow$ 预训练通用表征
+        };
+
+    \end{tikzpicture}
+    }}
+
+    \vspace{3mm}
+    {\centering
+    \colorbox{myblue!8}{\parbox{0.9\linewidth}{\centering\large\bfseries
+        模型能力不断增强，泛化能力不断提高
+    }}
+    \par}
+}
+
+% === [占位图] ===
+\block{}{
+    {\centering
+    \colorbox{mygray!12}{\parbox{0.88\linewidth}{
+        \centering
+        \vspace{16mm}
+        \LARGE\textbf{[ 占位图：模型架构对比 ]}
+        \vspace{4mm}
+
+        \normalsize EEGNet / EEG Conformer / CBraMod 结构示意图
+        \vspace{3mm}
+
+        \small (等待绘制或队友提供)
+        \vspace{16mm}
+    }}
+    \par}
+}
+
+% ================================================================
+% 右栏
+% ================================================================
+\column{0.5}
+
+% === [图2] 可解释性挑战 ===
+\block{3. 可解释性挑战：模型变强后，我们失去了什么？}{
+
+    \vspace{-4mm}
+    {\centering
+    \resizebox{0.85\linewidth}{!}{%
+    \begin{tikzpicture}[
+        stage/.style={draw, very thick, rounded corners=14pt, align=center,
+                      minimum width=6.5cm, minimum height=2.8cm},
+        arrow/.style={->, >=Stealth, line width=2.5pt},
+        icon/.style={font=\Huge}]
+
+        \node [stage, draw=mygreen, fill=mygreen!8] (trad) {
+            \textbf{\Large 传统 EEG 分析}\\[2mm]
+            \footnotesize Alpha · Beta · Theta · Delta 频段\\
+            \footnotesize 频带能量 · 时域统计\\
+            \footnotesize \textbf{可解释的生理量}
+        };
+        \node [left=2mm of trad.west, font=\Huge, text=mygreen] {(i)};
+
+        \node [stage, draw=myorange, fill=myorange!8, below=2.5cm of trad] (deep) {
+            \textbf{\Large 深度特征}\\[2mm]
+            \footnotesize CNN 卷积核 · Attention Map\\
+            \footnotesize 部分可视化但语义不明确\\
+            \footnotesize \textbf{解释难度增加}
+        };
+        \node [left=2mm of deep.west, font=\Huge, text=myorange] {(ii)};
+
+        \node [stage, draw=myred, fill=myred!8, below=2.5cm of deep] (found) {
+            \textbf{\Large Foundation Embeddings}\\[2mm]
+            \footnotesize 高维隐空间向量\\
+            \footnotesize 泛化强但难以直接对应\\
+            \footnotesize \textbf{可解释性挑战}
+        };
+        \node [left=2mm of found.west, font=\Huge, text=myred] {(iii)};
+
+        \draw [arrow, myorange, line width=2.5pt] (trad.south) -- (deep.north)
+            node[midway, right, font=\footnotesize\bfseries, text=myorange] {$\uparrow$ 抽象程度};
+        \draw [arrow, myred, line width=2.5pt] (deep.south) -- (found.north)
+            node[midway, right, font=\footnotesize\bfseries, text=myred] {$\uparrow$ 抽象程度};
+
+        \draw [decorate, decoration={brace, amplitude=10pt, mirror}, line width=3pt, myblue]
+            ($(trad.north east)+(1.2,0)$) -- ($(found.south east)+(1.2,0)$)
+            node[midway, right=6mm, font=\Large\bfseries, text=myblue, text width=4.5cm, align=center]
+            {表征越来越\\抽象\\解释难度\\增大};
+
+    \end{tikzpicture}
+    }}
+
+    \vspace{3mm}
+    {\centering
+    \colorbox{myorange!10}{\parbox{0.9\linewidth}{\centering\large\bfseries
+        [注意] 使用 ``Interpretability Challenge'' 而非 ``可解释性下降''
+    }}
+    \par}
+}
+
+% === 对比表 ===
+\block{4. 对比总结：一张表看完全文}{
+    \vspace{-2mm}
+    {\centering\small\itshape\color{mygray}评委即使只看这张表也能理解核心观点\par}
+    \vspace{3mm}
+
+    {\centering
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{模型} & \textbf{核心思想} & \textbf{泛化能力} & \textbf{可解释性} \\
+        \hline
+        EEGNet        & CNN               & \textcolor{myred}{低}    & \textcolor{mygreen}{高}     \\
+        \hline
+        EEG Conformer & CNN + Transformer & \textcolor{myorange}{中}  & \textcolor{myorange}{中}    \\
+        \hline
+        CBraMod       & 大规模预训练      & \textcolor{mygreen}{高}   & \textcolor{myred}{较低}     \\
+        \hline
+        \rowcolor{mygreen!10}
+        \textbf{+ NeuroGate} & \textbf{+ 神经科学先验} & \textcolor{mygreen}{\textbf{高}} & \textcolor{myblue}{\textbf{预期更高}} \\
+        \hline
+    \end{tabular}
+    \par}
+
+    \vspace{4mm}
+    {\centering\large
+        模型越强 $\rightarrow$ 泛化越好 $\rightarrow$ 但可解释性越难
+    \par}
+}
+
+% === [图3] NeuroGate 示意图 ===
+\block{5. 未来方向：NeuroGate —— 重新引入神经科学知识}{
+
+    \vspace{-4mm}
+    {\centering
+    \resizebox{0.92\linewidth}{!}{%
+    \begin{tikzpicture}[
+        box/.style={draw, very thick, rounded corners=10pt, minimum width=5cm,
+                    minimum height=1.8cm, align=center},
+        fuse/.style={draw=myorange, very thick, rounded corners=10pt,
+                     fill=myorange!10, minimum width=3.8cm, minimum height=2cm, align=center},
+        arrow/.style={->, >=Stealth, line width=2.5pt}]
+
+        % CBraMod
+        \node [box, draw=myblue, fill=myblue!10] (cbramod) {
+            \textbf{CBraMod}\\[1mm]
+            \footnotesize Backbone Embedding
+        };
+
+        % Neuro prior
+        \node [box, draw=mygreen, fill=mygreen!8, below=3.5cm of cbramod] (prior) {
+            \textbf{神经科学先验}\\[1mm]
+            \footnotesize 频带能量 · 时域统计 · 复杂度
+        };
+
+        % Gate
+        \node [fuse, right=4cm of $(cbramod.east)!0.5!(prior.east)$] (gate) {
+            \textbf{\large Gated Fusion}\\[1mm]
+            \footnotesize $z = h + g \cdot \phi(m)$
+        };
+
+        % Output
+        \node [box, draw=mypurple, fill=mypurple!8, right=4cm of gate] (output) {
+            \textbf{增强表征}\\[1mm]
+            \footnotesize 泛化能力 + 可解释性
+        };
+
+        % Arrows
+        \draw [arrow, myblue] (cbramod.east) -| (gate.north);
+        \draw [arrow, mygreen] (prior.east) -| (gate.south);
+        \draw [arrow, myorange, line width=3pt] (gate.east) -- (output.west);
+
+        % Labels
+        \node [above=1mm of $(cbramod.east)!0.5!(gate.north)$, font=\footnotesize, text=myblue] {$h$};
+        \node [below=1mm of $(prior.east)!0.5!(gate.south)$, font=\footnotesize, text=mygreen] {$m$};
+
+        % Legend
+        \node [below=6mm of gate.south, font=\footnotesize, text=mygray, align=center] {
+            $g$ = 门控权重 (模型自主决定接受多少先验) \quad
+            $\phi$ = 小型投影网络
+        };
+
+    \end{tikzpicture}
+    }}
+
+    \vspace{3mm}
+    {\centering
+    \colorbox{mypurple!8}{\parbox{0.9\linewidth}{\centering\large\bfseries
+        目标：保持 Foundation Model 的泛化能力，同时提升可解释性
+    }}
+    \par}
+
+    \vspace{2mm}
+    {\centering\small
+        \textcolor{myred}{[不写] NeuroGate 解决了可解释性问题}
+        \hspace{12mm}
+        \textcolor{myblue}{[而写] NeuroGate represents one possible direction}
+    \par}
+}
+
+% === [占位图] ===
+\block{}{
+    {\centering
+    \colorbox{mygray!12}{\parbox{0.88\linewidth}{
+        \centering
+        \vspace{14mm}
+        \LARGE\textbf{[ 占位图：CBraMod 复现结果 ]}
+        \vspace{4mm}
+
+        \normalsize 原论文任务复现主表
+        \vspace{2mm}
+
+        \normalsize 3-seed avg bAcc + best bAcc + 论文参考值
+        \vspace{3mm}
+
+        \small (等待队友复现结果填入)
+        \vspace{14mm}
+    }}
+    \par}
+}
+
+\end{columns}
+
+% =====================
+% 底部
+% =====================
+\block{如果评委只记住一句话}{
+    {\centering
+    \Large\bfseries
+    EEG Foundation Models 正在解决泛化问题，\\
+    而可解释性正在成为新的瓶颈。\\[3mm]
+    \normalsize
+    NeuroGate 尝试将神经科学知识重新引入 Foundation Models —— 其中一个可能的方向。
+    \par}
+
+    \vspace{3mm}
+    {\centering\footnotesize\color{mygray}
+        \textbf{参考文献：}
+        [1] Lawhern et al., EEGNet, J. Neural Eng., 2018 \quad
+        [2] Song et al., EEG Conformer, IEEE TNSRE, 2023 \quad
+        [3] Wang et al., CBraMod, ICLR, 2025 \quad
+        [4] NeuroGate / NeuroKE 内部实验
+    \par}
+}
+
+\end{document}

@@ -1,0 +1,22 @@
+# LaTeX 编译产物
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb
+
+# macOS
+.DS_Store
+
+# 临时文件
+.~*
+
+# PDF 编译输出 (保留在 pdf/ 目录中，gitignore 仅忽略根目录散落的)
+/*.pdf

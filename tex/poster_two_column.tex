@@ -1,0 +1,293 @@
+\documentclass[25pt, a0paper, portrait, margin=15mm, innermargin=15mm, blockverticalspace=10mm]{tikzposter}
+
+% ===== 中文支持 =====
+\usepackage{ctex}
+
+% ===== 颜色定义 =====
+\definecolor{myblue}{RGB}{25,55,109}
+\definecolor{myorange}{RGB}{230,120,23}
+\definecolor{mygray}{RGB}{120,120,120}
+
+% ===== 主题 =====
+\usetheme{Default}
+\usecolorstyle{Blue}
+
+% ===== 标题区（使用 tikzposter 标准方式）=====
+\settitle{
+    \vbox{
+        \centering
+        \color{white}\bfseries
+        \fontsize{48}{58}\selectfont
+        从任务专用模型到基础模型：
+        \fontsize{36}{44}\selectfont
+        EEG 解码的泛化能力演进与可解释性挑战
+    }
+}
+\author{\fontsize{22}{28}\selectfont 第一作者 (SUSTech ID) \quad 第二作者 (ID) \quad 第三作者 (ID)}
+\titlegraphic{\fontsize{16}{20}\selectfont BMEB215 \quad 机器学习与医学工程应用 \quad 2026 Spring}
+
+\useblockstyle{Basic}
+
+\begin{document}
+
+\maketitle
+
+% =====================
+% 两栏布局
+% =====================
+\begin{columns}
+
+% ================================================================
+% 左栏
+% ================================================================
+\column{0.5}
+
+\block{1. 引言：为什么需要更强的 EEG 模型？}{
+    \textbf{EEG 应用广泛但面临核心困难：}
+
+    \begin{itemize}
+        \item \textbf{数据标注昂贵} —— BCI、临床、情绪、睡眠等任务需要专家标注，标签成本高
+        \item \textbf{被试差异大} —— 同一任务在不同被试、session、设备上的分布差异明显
+        \item \textbf{泛化能力差} —— 单任务监督模型容易过拟合本地数据，跨任务复用困难
+    \end{itemize}
+
+    \vspace{3mm}
+    \textbf{模型发展脉络：}
+
+    \vspace{2mm}
+    {\centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{EEGNet} & \textbf{EEG Conformer} & \textbf{CBraMod} \\
+        \hline
+        紧凑 CNN & CNN + Transformer & 大规模预训练 \\
+        局部时空特征 & 长程依赖建模 & 通用表征 \\
+        人工归纳偏置 & 全局信息利用 & Foundation Model \\
+        \hline
+    \end{tabular}
+    \par}
+
+    \vspace{3mm}
+    \textbf{核心问题：}EEG 模型是如何一步步发展到 Foundation Model 的？而这种发展又带来了什么新的问题？
+}
+
+\block{2. 演进：Foundation Model 是如何出现的？}{
+
+    \textbf{第一阶段：EEGNet（2018）—— 深度 CNN 专家模型}
+
+    \begin{itemize}
+        \item 核心思想：用紧凑 CNN 将 EEG 领域知识融入深度学习
+        \item Temporal conv $\rightarrow$ Depthwise spatial conv $\rightarrow$ Separable conv
+        \item \textbf{局限：}任务专用训练，跨任务复用弱；感受野偏局部
+    \end{itemize}
+
+    \vspace{2mm}
+    \textbf{第二阶段：EEG Conformer（2023）—— CNN + Transformer 混合}
+
+    \begin{itemize}
+        \item CNN 前端提取局部特征 $\rightarrow$ Transformer encoder 建模全局时序依赖
+        \item 自注意力机制支持并行计算，参数可扩展
+        \item \textbf{意义：}为大规模预训练提供了架构基础（全局注意力 + 并行训练友好）
+    \end{itemize}
+
+    \vspace{2mm}
+    \textbf{第三阶段：CBraMod（2025）—— EEG Foundation Model}
+
+    \begin{itemize}
+        \item Criss-Cross 注意力 + 大规模 EEG 预训练
+        \item 先通过无标注数据学习通用表征，再通过 LP/FT 适配下游任务
+        \item \textbf{范式变化：}从「每个任务单独训练」转向「预训练通用表征 → 适配多任务」
+    \end{itemize}
+
+    \vspace{3mm}
+    {\centering
+    \colorbox{myblue!10}{\parbox{0.9\linewidth}{
+        \centering
+        \textbf{核心结论：}模型能力不断增强，泛化能力不断提高。\\
+        从 CNN 局部特征，到 Transformer 全局建模，再到预训练通用表征。
+    }}
+    \par}
+}
+
+% --- [占位图1] ---
+\block{}{
+    {\centering
+    \colorbox{mygray!15}{\parbox{0.85\linewidth}{
+        \centering
+        \vspace{15mm}
+        \LARGE \textbf{[ 占位图：模型架构对比 ]}
+        \vspace{5mm}
+
+        \normalsize EEGNet / EEG Conformer / CBraMod 结构对比示意图
+        \vspace{3mm}
+
+        \small （等待绘制或队友提供）
+        \vspace{15mm}
+    }}
+    \par}
+}
+
+\block{3. 对比分析：整张海报的压缩版}{
+    {\centering
+    \textbf{评委即使只看这张表，也能理解核心观点。}
+
+    \vspace{5mm}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{模型} & \textbf{核心思想} & \textbf{泛化能力} & \textbf{可解释性} \\
+        \hline
+        EEGNet        & CNN               & 低               & 高             \\
+        \hline
+        EEG Conformer & CNN + Transformer & 中               & 中             \\
+        \hline
+        CBraMod       & 大规模预训练      & 高               & 较低           \\
+        \hline
+        NeuroGate     & + 神经科学先验    & 高               & 预期更高       \\
+        \hline
+    \end{tabular}
+    \par}
+
+    \vspace{3mm}
+    模型越强 $\rightarrow$ 泛化越好 $\rightarrow$ 但可解释性越难。
+}
+
+% ================================================================
+% 右栏
+% ================================================================
+\column{0.5}
+
+% --- [占位图2] ---
+\block{}{
+    {\centering
+    \colorbox{mygray!15}{\parbox{0.85\linewidth}{
+        \centering
+        \vspace{15mm}
+        \LARGE \textbf{[ 占位图：复现结果对比 ]}
+        \vspace{5mm}
+
+        \normalsize CBraMod 原论文任务复现主表 \\
+        3-seed 平均值 + best seed + 论文参考值
+        \vspace{3mm}
+
+        \small （等待队友复现结果）
+        \vspace{15mm}
+    }}
+    \par}
+}
+
+\block{4. 可解释性挑战：模型变强以后，我们失去了什么？}{
+
+    \textbf{表征变得越来越抽象：}
+
+    \vspace{3mm}
+    {\centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{传统 EEG 分析} & \textbf{深度特征} & \textbf{Foundation Embedding} \\
+        \hline
+        Alpha / Beta / Theta & CNN 卷积核 & 高维隐空间向量 \\
+        频带能量 $\cdot$ 时域统计 & 部分可视化 & 语义不明确 \\
+        可解释的生理量 & 解释难度增加 & 泛化强但难理解 \\
+        \hline
+    \end{tabular}
+    \par}
+
+    \vspace{5mm}
+    {\centering
+    \colorbox{myblue!10}{\parbox{0.85\linewidth}{
+        \centering
+        \large \textbf{表征越来越抽象 \quad $\Rightarrow$ \quad 解释难度增大}
+    }}
+    \par}
+
+    \vspace{3mm}
+    \textbf{措辞注意：}使用 "Interpretability Challenge" 而非 "可解释性下降" ——
+    我们不需要证明它下降了，只需说明理解模型在学什么变得更困难。
+}
+
+\block{5. 未来方向：NeuroGate —— 重新引入神经科学知识}{
+
+    \textbf{思路：}CBraMod Embedding + 神经科学先验 $\rightarrow$ Gated Fusion $\rightarrow$ 增强表征
+
+    \vspace{3mm}
+    {\centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{输入} & \textbf{融合理念} & \textbf{输出} \\
+        \hline
+        CBraMod Backbone &  & 泛化能力 \\
+        + & Gated Fusion $\longrightarrow$ & + \\
+        神经科学先验 &  & 可解释性 \\
+        \hline
+    \end{tabular}
+    \par}
+
+    \vspace{5mm}
+    \textbf{融合公式：}
+    \[
+    z = h + g \cdot \phi(m)
+    \]
+    \begin{itemize}
+        \item $h$ = CBraMod backbone embedding（预训练表征）
+        \item $m$ = 人工神经先验特征（频带能量、时域统计、复杂度等）
+        \item $\phi(m)$ = 小型投影网络
+        \item $g$ = 门控权重（模型自主决定接受多少先验）
+    \end{itemize}
+
+    \vspace{3mm}
+    \textbf{目标：}保持 Foundation Model 的泛化能力，同时提升可解释性。
+
+    \vspace{3mm}
+    \textbf{正确表述（不要过度承诺）：}
+    \begin{itemize}
+        \item \textcolor{red}{\textbf{不要写：}}NeuroGate 解决了可解释性问题
+        \item \textcolor{myblue}{\textbf{而写：}}NeuroGate represents one possible direction
+    \end{itemize}
+}
+
+% --- [占位图3] ---
+\block{}{
+    {\centering
+    \colorbox{mygray!15}{\parbox{0.85\linewidth}{
+        \centering
+        \vspace{12mm}
+        \LARGE \textbf{[ 占位图：NeuroGate LP 消融实验结果 ]}
+        \vspace{5mm}
+
+        \normalsize HMC / ISRUC-S1 / MDD / Physionet-MI \\
+        CBraMod LP vs NeuroGate LP 对比柱状图
+        \vspace{3mm}
+
+        \small （等待队友复现结果）
+        \vspace{12mm}
+    }}
+    \par}
+}
+
+% --- 参考文献 ---
+\block{参考文献}{
+    \footnotesize
+    \begin{enumerate}
+        \item Lawhern et al., \textbf{EEGNet: A Compact Convolutional Neural Network for EEG-based BCIs}, J. Neural Eng., 2018.
+        \item Song et al., \textbf{EEG Conformer: Convolutional Transformer for EEG Decoding and Visualization}, IEEE TNSRE, 2023.
+        \item Wang et al., \textbf{CBraMod: A Criss-Cross Brain Foundation Model for EEG Decoding}, ICLR, 2025.
+        \item NeuroGate / NeuroKE 内部参考：neural-prior gated fusion experiments under LP and FT.
+        \item 本地复现记录：\texttt{cbramod\_reproduction\_results\_summary.md}
+    \end{enumerate}
+}
+
+\end{columns}
+
+% =====================
+% 底部核心信息
+% =====================
+\block{如果评委只记住一句话}{
+    {\centering
+    \LARGE \textbf{EEG Foundation Models 正在解决泛化问题，而可解释性正在成为新的瓶颈。}
+
+    \vspace{3mm}
+    \large NeuroGate 尝试将神经科学知识重新引入 Foundation Models —— 这是其中一个可能的方向。
+    \par}
+}
+
+\end{document}
